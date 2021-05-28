@@ -113,7 +113,7 @@ const dailyTask = async () => {
     }
 };
 
-schedule.scheduleJob('0 55 23 1/1 * ? *', () => {
+schedule.scheduleJob('55 23 * * *', () => {
     dailyTask();
     console.log('dailyTask ran at ' + new Date().toLocaleString());
 });
