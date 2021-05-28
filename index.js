@@ -86,31 +86,33 @@ const dailyTask = async () => {
             method: 'POST',
         });
         for (const card of results) {
-            const cardDate = date.parseISO(
-                card.properties[dateField]?.date.start
-            );
+            if (card.properties[dateField]) {
+                const cardDate = date.parseISO(
+                    card.properties[dateField]?.date.start
+                );
 
-            const isDaily = card.properties[dailyMarker].checkbox;
-            const isChecked = card.properties[checkDoneField].checkbox;
-            const isToday = date.isToday(cardDate);
-            const hasPassed = date.isBefore(cardDate, date.startOfToday());
-            const hasHours = card.properties.Data.date.start.length > 10;
+                const isDaily = card.properties[dailyMarker].checkbox;
+                const isChecked = card.properties[checkDoneField].checkbox;
+                const isToday = date.isToday(cardDate);
+                const hasPassed = date.isBefore(cardDate, date.startOfToday());
+                const hasHours = card.properties.Data.date.start.length > 10;
 
-            // if (isDaily && isToday) {
-            if (isDaily && isToday) {
-                if (isChecked) {
-                    let updatedDate = addDay(cardDate, hasHours);
-                    await notion.pages.update({
-                        page_id: card.id,
-                        properties: uncheckAndNextDay(updatedDate),
-                    });
-                } else {
-                    // Send alert and pass to next day
-                    let updatedDate = addDay(cardDate, hasHours);
-                    await notion.pages.update({
-                        page_id: card.id,
-                        properties: nextDay(updatedDate),
-                    });
+                // if (isDaily && isToday) {
+                if (isDaily && isToday) {
+                    if (isChecked) {
+                        let updatedDate = addDay(cardDate, hasHours);
+                        await notion.pages.update({
+                            page_id: card.id,
+                            properties: uncheckAndNextDay(updatedDate),
+                        });
+                    } else {
+                        // Send alert and pass to next day
+                        let updatedDate = addDay(cardDate, hasHours);
+                        await notion.pages.update({
+                            page_id: card.id,
+                            properties: nextDay(updatedDate),
+                        });
+                    }
                 }
             }
         }
