@@ -55,25 +55,27 @@ const addDay = (ISOdate, hasHours) => {
 const uncheckAndNextDay = (updatedDate) => {
     return JSON.parse(
         `{
-                "${checkDoneField}": {"checkbox": false},
-                "${dateField}": {
-                    "date": {
-                        "start": "${updatedDate}"
-                    }
+            "${checkDoneField}": {
+                "checkbox": false
+            },
+            "${dateField}": {
+                "date": {
+                    "start": "${updatedDate}"
                 }
-            }`
+            }
+        }`
     );
 };
 
 const nextDay = (updatedDate) => {
     return JSON.parse(
         `{
-                    "${dateField}": {
-                        "date": {
-                            "start": "${updatedDate}"
-                        }
-                    }
-                }`
+            "${dateField}": {
+                "date": {
+                    "start": "${updatedDate}"
+                }
+            }
+        }`
     );
 };
 
@@ -113,8 +115,10 @@ const dailyTask = async () => {
 
 schedule.scheduleJob('0 55 23 1/1 * ? *', () => {
     dailyTask();
-    console.log('Ran ' + new Date().toLocaleDateString());
+    console.log('dailyTask ran at ' + new Date().toLocaleString());
 });
+
+console.log('Up and running!');
 
 //* Timezones: http://1min.in/content/international/time-zones
 
