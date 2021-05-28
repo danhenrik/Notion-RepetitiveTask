@@ -1,0 +1,28 @@
+{
+  "name": "notion",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "@notionhq/client": "^0.1.8",
+    "date-fns": "^2.21.3",
+    "date-fns-tz": "^1.1.4",
+    "dotenv": "^10.0.0",
+    "node-schedule": "^2.0.0",
+    "nodemon": "^2.0.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danhenrik/notion.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/danhenrik/notion/issues"
+  },
+  "homepage": "https://github.com/danhenrik/notion#readme"
+}
