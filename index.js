@@ -122,6 +122,7 @@ const dailyTask = async () => {
 };
 
 cron.schedule('55 23 * * *' ,() => {
+    console.log(new Date().toLocaleString());
     dailyTask();
 })
 
