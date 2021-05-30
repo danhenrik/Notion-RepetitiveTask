@@ -5,7 +5,7 @@ const date = require('date-fns');
 const tz = require('date-fns-tz');
 const fs = require('fs');
 const path = require('path');
-const schedule = require('node-schedule');
+const cron = require('node-cron');
 
 // TODO: Escalar a aplicação pra um uso mais generalizado
 // TODO: Testar na main
@@ -121,10 +121,9 @@ const dailyTask = async () => {
     }
 };
 
-schedule.scheduleJob('55 23 * * *', () => {
-    console.log('dailyTask ran at ' + new Date().toLocaleString());
+cron.schedule('55 23 * * *' ,() => {
     dailyTask();
-});
+})
 
 console.log('Up and running!');
 
