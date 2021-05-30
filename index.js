@@ -129,6 +129,7 @@ app.post('/', (req, res) => {
         console.log(new Date().toLocaleString());
         dailyTask();
     });
+    res.send('Ok!');
 });
 
 app.listen(3000, () => {
