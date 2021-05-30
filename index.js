@@ -6,6 +6,8 @@ const tz = require('date-fns-tz');
 const fs = require('fs');
 const path = require('path');
 const cron = require('node-cron');
+const express = require('express');
+const app = express();
 
 // TODO: Escalar a aplicação pra um uso mais generalizado
 // TODO: Testar na main
@@ -55,27 +57,27 @@ const addDay = (ISOdate, hasHours) => {
 const uncheckAndNextDay = (updatedDate) => {
     return JSON.parse(
         `{
-            "${checkDoneField}": {
-                "checkbox": false
-            },
-            "${dateField}": {
-                "date": {
-                    "start": "${updatedDate}"
+                "${checkDoneField}": {
+                    "checkbox": false
+                },
+                "${dateField}": {
+                    "date": {
+                        "start": "${updatedDate}"
+                    }
                 }
-            }
-        }`
+            }`
     );
 };
 
 const nextDay = (updatedDate) => {
     return JSON.parse(
         `{
-            "${dateField}": {
-                "date": {
-                    "start": "${updatedDate}"
-                }
-            }
-        }`
+                    "${dateField}": {
+                        "date": {
+                            "start": "${updatedDate}"
+                        }
+                    }
+                }`
     );
 };
 
@@ -121,23 +123,30 @@ const dailyTask = async () => {
     }
 };
 
-cron.schedule('55 23 * * *' ,() => {
-    console.log(new Date().toLocaleString());
-    dailyTask();
-})
+app.post('/', (req, res) => {
+    console.log('Deu get!');
+    cron.schedule('55 23 * * *', () => {
+        console.log(new Date().toLocaleString());
+        dailyTask();
+    });
+});
+
+app.listen(3000, () => {
+    console.log('Api listening');
+});
 
 console.log('Up and running!');
 
 //* Timezones: http://1min.in/content/international/time-zones
 
 /*
-//* Update 1
-const changeRes = await notion.request({
-    path: `pages/${card.id}`,
-    method: 'PATCH',
-    body: {
-        properties: {
-            'Ok?': {
+                    //* Update 1
+                    const changeRes = await notion.request({
+                        path: `pages/${card.id}`,
+                        method: 'PATCH',
+                        body: {
+                            properties: {
+                                'Ok?': {
                 checkbox: false,
             },
         },
