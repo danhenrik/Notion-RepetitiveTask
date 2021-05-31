@@ -93,7 +93,7 @@ const repetitiveTask = async () => {
         const isDaily = card.properties[dailyMarker].checkbox;
         const isWeekly = card.properties[weeklyMarker].checkbox;
         const isChecked = card.properties[checkDoneField].checkbox;
-        const isToday = date.isToday(cardDate);
+        const isToday = date.isYesterday(cardDate);
         const hasPassed = date.isBefore(cardDate, date.startOfToday());
         const hasHours = card.properties.Data.date.start.length > 10;
 
@@ -136,7 +136,7 @@ const repetitiveTask = async () => {
   }
 };
 
-cron.schedule('55 23 * * *', () => {
+cron.schedule('30 3 * * *', () => {
   console.log(new Date().toLocaleString());
   repetitiveTask();
 });
