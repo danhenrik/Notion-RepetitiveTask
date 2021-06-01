@@ -10,6 +10,7 @@ const cron = require('node-cron');
 // TODO: Escalar a aplicação pra um uso mais generalizado
 // TODO: Testar na main
 
+const nameField = 'Nome';
 const checkDoneField = 'Ok?';
 const dateField = 'Data';
 const dailyMarker = 'Daily';
@@ -46,8 +47,8 @@ const addDay = (ISOdate, hasHours, daysAmount) => {
     .substring(0, 10);
 
   if (hasHours) {
-    const cardHours = formatDateToTwoString(date.getHours(cardDate));
-    const cardMinutes = formatDateToTwoString(date.getMinutes(cardDate));
+    const cardHours = formatDateToTwoString(date.getHours(ISOdate));
+    const cardMinutes = formatDateToTwoString(date.getMinutes(ISOdate));
     updatedDate += `T${cardHours}:${cardMinutes}:00.000-03:00`;
   }
   return updatedDate;
@@ -104,6 +105,9 @@ const repetitiveTask = async () => {
               page_id: card.id,
               properties: uncheckAndNextOcurrency(updatedDate),
             });
+            console.log(
+              `Changed ${card.properties[nameField].title[0].text.content} daily task to next day`
+            );
           } else {
             // Send alert and pass to next day
             let updatedDate = addDay(cardDate, hasHours, 1);
@@ -116,11 +120,14 @@ const repetitiveTask = async () => {
 
         if (isWeekly && isToday) {
           if (isChecked) {
-            let updatedDate = addDay(cardDate, hasHours);
+            let updatedDate = addDay(cardDate, hasHours, 7);
             await notion.pages.update({
               page_id: card.id,
               properties: uncheckAndNextOcurrency(updatedDate),
             });
+            console.log(
+              `Changed ${card.properties[nameField].title[0].text.content} weekly task to next week`
+            );
           } else {
             let updatedDate = addDay(cardDate, hasHours, 7);
             await notion.pages.update({
@@ -132,7 +139,7 @@ const repetitiveTask = async () => {
       }
     }
   } catch (err) {
-    console.log(error);
+    console.log(err);
   }
 };
 
