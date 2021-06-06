@@ -5,6 +5,24 @@ const date = require('date-fns');
 const tz = require('date-fns-tz');
 const cron = require('node-cron');
 
+const requirements = [
+  'TOKEN',
+  'DATABASE_URL',
+  'TITLE_FIELD',
+  'DATE_FIELD',
+  'CHECKBOX_FIELD',
+  'REPETITIVE_FIELD',
+  'TZ',
+];
+requirements.forEach((req) => {
+  if (!process.env[req]) {
+    console.error(
+      `Couldn't find ${req} on .env file, please make sure to fill the .env variables with the right values.`
+    );
+    process.exit();
+  }
+});
+
 const notion = new Client({
   auth: process.env.TOKEN,
   logLevel: 'debug',
@@ -20,7 +38,7 @@ const formatDateToTwoString = (date) => {
 };
 
 const formatTimeZone = (ISOdate) => {
-  const timezone = 'America/Sao_Paulo';
+  const timezone = process.env.TZ;
   return tz.utcToZonedTime(ISOdate, timezone);
 };
 
@@ -59,7 +77,7 @@ const addDay = (ISOdate, hasHours, daysAmount) => {
 const uncheckAndNextOcurrency = (updatedDate) => {
   return JSON.parse(
     `{
-      "${process.env.CHECKED_FIELD}": {
+      "${process.env.CHECKBOX_FIELD}": {
         "checkbox": false
       },
       "${process.env.DATE_FIELD}": {
@@ -122,12 +140,19 @@ const repetitiveTask = async () => {
       method: 'POST',
     });
     for (const card of results) {
-      if (card.properties[process.env.DATE_FIELD] && card.properties[process.env.REPETITIVE_FIELD]) {
-        const cardDate = date.parseISO(card.properties[process.env.DATE_FIELD]?.date.start);
+      if (
+        card.properties[process.env.DATE_FIELD] &&
+        card.properties[process.env.REPETITIVE_FIELD]
+      ) {
+        const cardDate = date.parseISO(
+          card.properties[process.env.DATE_FIELD]?.date.start
+        );
         const repetitive =
-          card.properties[process.env.REPETITIVE_FIELD].select.name.toLowerCase();
+          card.properties[
+            process.env.REPETITIVE_FIELD
+          ].select.name.toLowerCase();
 
-        const isChecked = card.properties[process.env.CHECKED_FIELD].checkbox;
+        const isChecked = card.properties[process.env.CHECKBOX_FIELD].checkbox;
         const isToday = date.isYesterday(cardDate);
         const hasHours = card.properties.Data.date.start.length > 10;
 
@@ -141,7 +166,10 @@ const repetitiveTask = async () => {
                   properties: uncheckAndNextOcurrency(updatedDate),
                 });
                 console.log(
-                  `Changed ${card.properties[process.env.TITLE_FIELD].title[0].text.content} daily task to next day`
+                  `Changed ${
+                    card.properties[process.env.TITLE_FIELD].title[0].text
+                      .content
+                  } daily task to next day`
                 );
               } else {
                 await handleImcompleteTask(card, cardDate, hasHours, 1);
@@ -155,7 +183,10 @@ const repetitiveTask = async () => {
                   properties: uncheckAndNextOcurrency(updatedDate),
                 });
                 console.log(
-                  `Changed ${card.properties[process.env.TITLE_FIELD].title[0].text.content} weekly task to next week`
+                  `Changed ${
+                    card.properties[process.env.TITLE_FIELD].title[0].text
+                      .content
+                  } weekly task to next week`
                 );
               } else {
                 await handleImcompleteTask(card, cardDate, hasHours, 7);
@@ -169,7 +200,10 @@ const repetitiveTask = async () => {
                   properties: uncheckAndNextOcurrency(updatedDate),
                 });
                 console.log(
-                  `Changed ${card.properties[process.env.TITLE_FIELD].title[0].text.content} monthly task to next week`
+                  `Changed ${
+                    card.properties[process.env.TITLE_FIELD].title[0].text
+                      .content
+                  } monthly task to next week`
                 );
               } else {
                 await notion.pages.update({
@@ -197,33 +231,8 @@ const repetitiveTask = async () => {
 };
 
 cron.schedule('30 3 * * *', () => {
-  console.log(new Date().toLocaleString());
+  console.log(`Script ran ${new Date().toLocaleString()}`);
   repetitiveTask();
 });
 
 console.log('Up and running!');
-
-//* Timezones: http://1min.in/content/international/time-zones
-
-/*
-//* Update 1
-const changeRes = await notion.request({
-  path: `pages/${card.id}`,
-  method: 'PATCH',
-  body: {
-    properties: {
-      'Ok?': {
-        checkbox: false,
-      },
-    },
-  },
-});
-*/
-
-/*
-//* Update 2
-const changeDirect = await notion.pages.update({
-  page_id: card.id,
-  properties: {'Ok?': {checkbox: false}},
-});
-*/
