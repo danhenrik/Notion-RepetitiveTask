@@ -115,7 +115,7 @@ const createAlert = async (card) => {
   });
 };
 
-const handleImcompleteTask = async (card, hasHours, daysAmount) => {
+const handleImcompleteTask = async (card, cardDate, hasHours, daysAmount) => {
   let updatedDate = addDay(cardDate, hasHours, daysAmount);
   await notion.pages.update({
     page_id: card.id,
@@ -145,8 +145,10 @@ const repetitiveTask = async () => {
         card.properties[process.env.REPETITIVE_FIELD]
       ) {
         const cardDate = date.parseISO(
-          card.properties[process.env.DATE_FIELD]?.date.start
+          card.properties[process.env.DATE_FIELD].date.start
         );
+        console.log(cardDate)
+        console.log(card.properties[process.env.DATE_FIELD].date.start)
         const repetitive =
           card.properties[
             process.env.REPETITIVE_FIELD
@@ -229,10 +231,13 @@ const repetitiveTask = async () => {
     console.log(err);
   }
 };
+repetitiveTask();
 
+/*
 cron.schedule('30 3 * * *', () => {
   console.log(`Script ran ${new Date().toLocaleString()}`);
   repetitiveTask();
 });
+*/
 
 console.log('Up and running!');
