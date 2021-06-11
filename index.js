@@ -147,8 +147,6 @@ const repetitiveTask = async () => {
         const cardDate = date.parseISO(
           card.properties[process.env.DATE_FIELD].date.start
         );
-        console.log(cardDate)
-        console.log(card.properties[process.env.DATE_FIELD].date.start)
         const repetitive =
           card.properties[
             process.env.REPETITIVE_FIELD
