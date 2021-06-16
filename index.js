@@ -169,7 +169,7 @@ const repetitiveTask = async () => {
                   `Changed ${
                     card.properties[process.env.TITLE_FIELD].title[0].text
                       .content
-                  } daily task to next day`
+                  } (daily task) to next occurency`
                 );
               } else {
                 await handleImcompleteTask(card, cardDate, hasHours, 1);
@@ -186,10 +186,27 @@ const repetitiveTask = async () => {
                   `Changed ${
                     card.properties[process.env.TITLE_FIELD].title[0].text
                       .content
-                  } weekly task to next week`
+                  } (weekly task) to next occurency`
                 );
               } else {
                 await handleImcompleteTask(card, cardDate, hasHours, 7);
+              }
+              break;
+            case 'every other day':
+              if (isChecked) {
+                let updatedDate = addDay(cardDate, hasHours, 2);
+                await notion.pages.update({
+                  page_id: card.id,
+                  properties: uncheckAndNextOcurrency(updatedDate),
+                });
+                console.log(
+                  `Changed ${
+                    card.properties[process.env.TITLE_FIELD].title[0].text
+                      .content
+                  } (Every other day task) to next occurency`
+                );
+              } else {
+                await handleImcompleteTask(card, cardDate, hasHours, 2);
               }
               break;
             case 'monthly':
