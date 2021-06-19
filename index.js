@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const {Client} = require('@notionhq/client');
+const {makeConsoleLogger} = require('@notionhq/client/build/src/logging');
 const date = require('date-fns');
 const tz = require('date-fns-tz');
 const cron = require('node-cron');
@@ -135,110 +136,128 @@ const handleImcompleteTask = async (card, cardDate, hasHours, daysAmount) => {
 const repetitiveTask = async () => {
   try {
     const databaseID = parseSharedURL(process.env.DATABASE_URL);
-    const {results} = await notion.request({
-      path: `databases/${databaseID}/query`,
-      method: 'POST',
+
+    const response = await notion.databases.query({
+      database_id: '3a98859e43344645856d1bc88b9ac926',
+      filter: {
+        and: [
+          {
+            property: 'Repetitive',
+            select: {
+              is_not_empty: true,
+            },
+          },
+          {
+            property: 'Data',
+            date: {
+              is_not_empty: true,
+            },
+          },
+        ],
+      },
     });
+
+    const results = response.results;
+    if (response.has_more) {
+      let Res = response;
+      while (Res.has_more) {
+        Res = await notion.databases.query({
+          database_id: databaseID,
+          start_cursor: Res.next_cursor,
+        });
+        results.push(...Res.results);
+      }
+    }
+
     for (const card of results) {
-      if (
-        card.properties[process.env.DATE_FIELD] &&
-        card.properties[process.env.REPETITIVE_FIELD]
-      ) {
-        const cardDate = date.parseISO(
-          card.properties[process.env.DATE_FIELD].date.start
-        );
-        const repetitive =
-          card.properties[
-            process.env.REPETITIVE_FIELD
-          ].select.name.toLowerCase();
+      const cardDate = date.parseISO(
+        card.properties[process.env.DATE_FIELD].date.start
+      );
+      const repetitive =
+        card.properties[process.env.REPETITIVE_FIELD].select.name.toLowerCase();
 
-        const isChecked = card.properties[process.env.CHECKBOX_FIELD].checkbox;
-        const isToday = date.isYesterday(cardDate);
-        const hasHours = card.properties.Data.date.start.length > 10;
+      const isChecked = card.properties[process.env.CHECKBOX_FIELD].checkbox;
+      const isToday = date.isYesterday(cardDate);
+      const hasHours = card.properties.Data.date.start.length > 10;
 
-        if (isToday) {
-          switch (repetitive) {
-            case 'daily':
-              if (isChecked) {
-                let updatedDate = addDay(cardDate, hasHours, 1);
-                await notion.pages.update({
-                  page_id: card.id,
-                  properties: uncheckAndNextOcurrency(updatedDate),
-                });
-                console.log(
-                  `Changed ${
-                    card.properties[process.env.TITLE_FIELD].title[0].text
-                      .content
-                  } (daily task) to next occurency`
-                );
-              } else {
-                await handleImcompleteTask(card, cardDate, hasHours, 1);
-              }
-              break;
-            case 'weekly':
-              if (isChecked) {
-                let updatedDate = addDay(cardDate, hasHours, 7);
-                await notion.pages.update({
-                  page_id: card.id,
-                  properties: uncheckAndNextOcurrency(updatedDate),
-                });
-                console.log(
-                  `Changed ${
-                    card.properties[process.env.TITLE_FIELD].title[0].text
-                      .content
-                  } (weekly task) to next occurency`
-                );
-              } else {
-                await handleImcompleteTask(card, cardDate, hasHours, 7);
-              }
-              break;
-            case 'every other day':
-              if (isChecked) {
-                let updatedDate = addDay(cardDate, hasHours, 2);
-                await notion.pages.update({
-                  page_id: card.id,
-                  properties: uncheckAndNextOcurrency(updatedDate),
-                });
-                console.log(
-                  `Changed ${
-                    card.properties[process.env.TITLE_FIELD].title[0].text
-                      .content
-                  } (Every other day task) to next occurency`
-                );
-              } else {
-                await handleImcompleteTask(card, cardDate, hasHours, 2);
-              }
-              break;
-            case 'monthly':
-              let updatedDate = addMonth(cardDate, hasHours);
-              if (isChecked) {
-                await notion.pages.update({
-                  page_id: card.id,
-                  properties: uncheckAndNextOcurrency(updatedDate),
-                });
-                console.log(
-                  `Changed ${
-                    card.properties[process.env.TITLE_FIELD].title[0].text
-                      .content
-                  } monthly task to next week`
-                );
-              } else {
-                await notion.pages.update({
-                  page_id: card.id,
-                  properties: JSON.parse(
-                    `{
-                      "${process.env.DATE_FIELD}": {
-                        "date": {
-                          "start": "${updatedDate}"
-                        }
+      if (isToday) {
+        switch (repetitive) {
+          case 'daily':
+            if (isChecked) {
+              let updatedDate = addDay(cardDate, hasHours, 1);
+              await notion.pages.update({
+                page_id: card.id,
+                properties: uncheckAndNextOcurrency(updatedDate),
+              });
+              console.log(
+                `Changed ${
+                  card.properties[process.env.TITLE_FIELD].title[0].text.content
+                } (daily task) to next occurency`
+              );
+            } else {
+              await handleImcompleteTask(card, cardDate, hasHours, 1);
+            }
+            break;
+          case 'weekly':
+            if (isChecked) {
+              let updatedDate = addDay(cardDate, hasHours, 7);
+              await notion.pages.update({
+                page_id: card.id,
+                properties: uncheckAndNextOcurrency(updatedDate),
+              });
+              console.log(
+                `Changed ${
+                  card.properties[process.env.TITLE_FIELD].title[0].text.content
+                } (weekly task) to next occurency`
+              );
+            } else {
+              await handleImcompleteTask(card, cardDate, hasHours, 7);
+            }
+            break;
+          case 'every other day':
+            if (isChecked) {
+              let updatedDate = addDay(cardDate, hasHours, 2);
+              await notion.pages.update({
+                page_id: card.id,
+                properties: uncheckAndNextOcurrency(updatedDate),
+              });
+              console.log(
+                `Changed ${
+                  card.properties[process.env.TITLE_FIELD].title[0].text.content
+                } (Every other day task) to next occurency`
+              );
+            } else {
+              await handleImcompleteTask(card, cardDate, hasHours, 2);
+            }
+            break;
+          case 'monthly':
+            let updatedDate = addMonth(cardDate, hasHours);
+            if (isChecked) {
+              await notion.pages.update({
+                page_id: card.id,
+                properties: uncheckAndNextOcurrency(updatedDate),
+              });
+              console.log(
+                `Changed ${
+                  card.properties[process.env.TITLE_FIELD].title[0].text.content
+                } monthly task to next week`
+              );
+            } else {
+              await notion.pages.update({
+                page_id: card.id,
+                properties: JSON.parse(
+                  `{
+                    "${process.env.DATE_FIELD}": {
+                      "date": {
+                        "start": "${updatedDate}"
                       }
-                    }`
-                  ),
-                });
-                await createAlert(card);
-              }
-              break;
-          }
+                    }
+                  }`
+                ),
+              });
+              await createAlert(card);
+            }
+            break;
         }
       }
     }
