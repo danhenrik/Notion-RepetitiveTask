@@ -1,10 +1,8 @@
 require('dotenv').config();
 
 const {Client} = require('@notionhq/client');
-const {makeConsoleLogger} = require('@notionhq/client/build/src/logging');
 const date = require('date-fns');
 const tz = require('date-fns-tz');
-const cron = require('node-cron');
 
 const requirements = [
   'TOKEN',
