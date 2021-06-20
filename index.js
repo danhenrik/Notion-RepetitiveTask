@@ -266,12 +266,3 @@ const repetitiveTask = async () => {
   }
 };
 repetitiveTask();
-
-/*
-cron.schedule('30 3 * * *', () => {
-  console.log(`Script ran ${new Date().toLocaleString()}`);
-  repetitiveTask();
-});
-*/
-
-console.log('Up and running!');
