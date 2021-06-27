@@ -21,7 +21,7 @@ if (os.type().toLowerCase().includes('windows')) {
     "Schedule the .bat file on your task scheduler so you don't have to worry about it."
   );
 } else if (os.type().toLowerCase().includes('darwin')) {
-  if (!fs.existsSync('Notion-repetitive.bat')) {
+  if (!fs.existsSync('Notion-repetitive.sh')) {
     console.log('criou');
     fs.writeFileSync(
       'Notion-repetitive.sh',
