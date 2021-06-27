@@ -3,6 +3,36 @@ require('dotenv').config();
 const {Client} = require('@notionhq/client');
 const date = require('date-fns');
 const tz = require('date-fns-tz');
+const fs = require('fs');
+const path = require('path');
+const shell = require('shelljs');
+const os = require('os');
+
+if (os.type().toLowerCase().includes('windows')) {
+  if (!fs.existsSync('Notion-repetitive.bat')) {
+    console.log('criou');
+    fs.writeFileSync(
+      'Notion-repetitive.bat',
+      `cd "${path.resolve(__dirname)}"
+  node index.js`
+    );
+  }
+  shell.echo(
+    "Schedule the .bat file on your task scheduler so you don't have to worry about it."
+  );
+} else if (os.type().toLowerCase().includes('darwin')) {
+  if (!fs.existsSync('Notion-repetitive.bat')) {
+    console.log('criou');
+    fs.writeFileSync(
+      'Notion-repetitive.sh',
+      `cd "${path.resolve(__dirname)}"
+    node index.js`
+    );
+  }
+  shell.echo(
+    "Schedule the .sh file on your task scheduler so you don't have to worry about it."
+  );
+}
 
 const requirements = [
   'TOKEN',
@@ -48,7 +78,6 @@ const addMonth = (ISOdate, hasHours) => {
     .toISOString()
     .toString()
     .substring(0, 10);
-
   if (hasHours) {
     const cardHours = formatDateToTwoString(date.getHours(ISOdate));
     const cardMinutes = formatDateToTwoString(date.getMinutes(ISOdate));
@@ -99,7 +128,9 @@ const createAlert = async (card) => {
           "title": [
             {
               "text": {
-                "content": "${card.properties.Nome.title[0].text.content} was't done yesterday"
+                "content": "${
+                  card.properties[process.env.TITLE_FIELD].title[0].text.content
+                } was't done yesterday"
               }
             } 
           ]
@@ -134,19 +165,18 @@ const handleImcompleteTask = async (card, cardDate, hasHours, daysAmount) => {
 const repetitiveTask = async () => {
   try {
     const databaseID = parseSharedURL(process.env.DATABASE_URL);
-
     const response = await notion.databases.query({
-      database_id: '3a98859e43344645856d1bc88b9ac926',
+      database_id: databaseID,
       filter: {
         and: [
           {
-            property: 'Repetitive',
+            property: process.env.REPETITIVE_FIELD,
             select: {
               is_not_empty: true,
             },
           },
           {
-            property: 'Data',
+            property: process.env.DATE_FIELD,
             date: {
               is_not_empty: true,
             },
@@ -176,7 +206,8 @@ const repetitiveTask = async () => {
 
       const isChecked = card.properties[process.env.CHECKBOX_FIELD].checkbox;
       const isToday = date.isYesterday(cardDate);
-      const hasHours = card.properties.Data.date.start.length > 10;
+      const hasHours =
+        card.properties[process.env.DATE_FIELD].date.start.length > 10;
 
       if (isToday) {
         switch (repetitive) {
