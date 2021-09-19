@@ -127,6 +127,7 @@ async function main() {
               await notionAPI.handleImcompleteTask(card, cardDate, hasHours, 2);
             }
             break;
+          //? Not checked
           case 'monthly':
             (async () => {
               let updatedDate = dateService.addMonth(cardDate, hasHours);
@@ -152,7 +153,6 @@ async function main() {
               } else {
                 updatedDate = dateService.addDay(cardDate, hasHours, 3);
               }
-              console.log(updatedDate);
               if (isChecked) {
                 await notionAPI.updateCard(card, updatedDate);
                 console.warn(
@@ -166,6 +166,20 @@ async function main() {
                 await notionAPI.createAlert(card);
               }
             })();
+            break;
+          case 'every other week':
+            if (isChecked) {
+              let updatedDate = dateService.addDay(cardDate, hasHours, 14);
+              await notionAPI.updateCard(card, updatedDate);
+              console.warn(
+                `Changed ${
+                  card.properties[process.env.TITLE_FIELD].title[0].text.content
+                } (every other week task) to next occurency`
+              );
+            } else {
+              await notionAPI.handleImcompleteTask(card, cardDate, hasHours, 14);
+            }
+            break;
         }
       }
     }
