@@ -1,13 +1,22 @@
 const {Client} = require('@notionhq/client');
-const dateService = require('./dateService');
+const DateService = require('./DateService');
+
+const notionCheckbox = process.env.CHECKBOX_FIELD;
+const notionDate = process.env.DATE_FIELD;
+const notionTitle = process.env.TITLE_FIELD;
+const notionRepetitive = process.env.REPETITIVE_FIELD;
+const notionDatabaseURL = process.env.DATABASE_URL;
+const notionDatabaseID = process.env.DATABASE_ID;
+
+const parseSharedURL = (URL) => URL?.split('?')[0].split('so/')[1];
 
 function uncheckAndNextOcurrency(updatedDate) {
   return JSON.parse(
     `{
-      "${process.env.CHECKBOX_FIELD}": {
+      "${notionCheckbox}": {
         "checkbox": false
       },
-      "${process.env.DATE_FIELD}": {
+      "${notionDate}": {
         "date": {
           "start": "${updatedDate}"
         }
@@ -15,38 +24,31 @@ function uncheckAndNextOcurrency(updatedDate) {
     }`
   );
 }
-
-const parseSharedURL = (URL) => URL?.split('?')[0].split('so/')[1];
-
-class notionService {
+class NotionService {
   #notion;
   constructor() {
     this.#notion = new Client({
       auth: process.env.TOKEN,
-      logLevel: 'debug',
     });
   }
 
   // Creates a page with telling you that you didn't your task the day before.
   async createAlert(card) {
-    const alertDate = dateService.addDay(new Date().toISOString(), false, 0);
+    const alertDate = DateService.addDay(new Date().toISOString(), false, 0);
     await this.#notion.pages.create({
       parent: card.parent,
       properties: JSON.parse(
         `{
-          "${process.env.TITLE_FIELD}": {
+          "${notionTitle}": {
             "title": [
               {
                 "text": {
-                  "content": "${
-                    card.properties[process.env.TITLE_FIELD].title[0].text
-                      .content
-                  } was't done yesterday"
+                  "content": "${card.properties[notionTitle].title[0].text.content} was't done yesterday"
                 }
               } 
             ]
           },
-          "${process.env.DATE_FIELD}": {
+          "${notionDate}": {
             "date": {
               "start": "${alertDate}"
             }
@@ -57,7 +59,7 @@ class notionService {
   }
 
   async handleImcompleteTask(card, cardDate, hasHours, daysAmount) {
-    let updatedDate = dateService.addDay(cardDate, hasHours, daysAmount);
+    let updatedDate = DateService.addDay(cardDate, hasHours, daysAmount);
     await this.updateCard(card, updatedDate);
     await this.createAlert(card);
   }
@@ -71,17 +73,17 @@ class notionService {
 
   async queryDB() {
     const response = await this.#notion.databases.query({
-      database_id: parseSharedURL(process.env.DATABASE_URL) || process.env.DATABASE_ID,
+      database_id: parseSharedURL(notionDatabaseURL) || notionDatabaseID,
       filter: {
         and: [
           {
-            property: process.env.REPETITIVE_FIELD,
+            property: notionRepetitive,
             select: {
               is_not_empty: true,
             },
           },
           {
-            property: process.env.DATE_FIELD,
+            property: notionDate,
             date: {
               is_not_empty: true,
             },
@@ -93,4 +95,4 @@ class notionService {
   }
 }
 
-module.exports = new notionService();
+module.exports = new NotionService();

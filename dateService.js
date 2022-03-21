@@ -1,9 +1,9 @@
 const date = require('date-fns');
 const tz = require('date-fns-tz');
 
-function formatTimeZone(ISOdate) {
-  const timezone = process.env.TZ;
-  return tz.utcToZonedTime(ISOdate, timezone);
+function parseInput(ISOdate) {
+  const TZ = process.env.TZ;
+  return tz.utcToZonedTime(ISOdate, TZ);
 }
 
 function formatDateToTwoString(date) {
@@ -11,37 +11,43 @@ function formatDateToTwoString(date) {
   return date;
 }
 
-class dateService {
+function formatHours(ISOdate) {
+  const TZ = process.env.TZ;
+  const cardHours = formatDateToTwoString(date.getHours(ISOdate));
+  const cardMinutes = formatDateToTwoString(date.getMinutes(ISOdate));
+  let TZOffset = (tz.getTimezoneOffset(TZ) / 3600000).toString();
+  const TZSymbol = TZOffset.toString()[0] == '-' ? '-' : '+';
+  if (TZSymbol == '-')
+    TZOffset = TZOffset.substring(1);
+  const TZString = `${TZSymbol}${formatDateToTwoString(TZOffset)}:00`;
+  return `T${cardHours}:${cardMinutes}:00.000${TZString}`;
+}
+class DateService {
   addMonth(ISOdate, hasHours) {
-    const formattedDate = formatTimeZone(ISOdate);
     let updatedDate = date
-      .addMonths(formattedDate, 1)
+      .addMonths(parseInput(ISOdate), 1)
       .toISOString()
       .toString()
       .substring(0, 10);
+
     if (hasHours) {
-      const cardHours = formatDateToTwoString(date.getHours(ISOdate));
-      const cardMinutes = formatDateToTwoString(date.getMinutes(ISOdate));
-      updatedDate += `T${cardHours}:${cardMinutes}:00.000-03:00`;
+      updatedDate += formatHours(ISOdate);
     }
     return updatedDate;
   }
 
   addDay(ISOdate, hasHours, daysAmount) {
-    const formattedDate = formatTimeZone(ISOdate);
     let updatedDate = date
-      .addDays(formattedDate, daysAmount)
+      .addDays(parseInput(ISOdate), daysAmount)
       .toISOString()
       .toString()
       .substring(0, 10);
 
     if (hasHours) {
-      const cardHours = formatDateToTwoString(date.getHours(ISOdate));
-      const cardMinutes = formatDateToTwoString(date.getMinutes(ISOdate));
-      updatedDate += `T${cardHours}:${cardMinutes}:00.000-03:00`;
+      updatedDate += formatHours(ISOdate);
     }
     return updatedDate;
   }
 }
 
-module.exports = new dateService();
+module.exports = new DateService();

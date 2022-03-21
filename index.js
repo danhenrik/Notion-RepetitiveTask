@@ -7,8 +7,8 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
-const dateService = require('./dateService');
-const notionAPI = require('./notionAPIServices');
+const DateService = require('./DateService');
+const NotionAPI = require('./NotionAPIServices');
 
 const requirements = [
   'TOKEN',
@@ -55,7 +55,7 @@ if (
 
 async function main() {
   try {
-    const response = await notionAPI.queryDB();
+    const response = await NotionAPI.queryDB();
 
     const results = response.results;
     if (response.has_more) {
@@ -70,69 +70,64 @@ async function main() {
     }
 
     for (const card of results) {
-      console.log(card.properties.Nome.title[0].text.content);
       const cardDate = date.parseISO(
         card.properties[process.env.DATE_FIELD].date.start
       );
-      const repetitive =
-        card.properties[process.env.REPETITIVE_FIELD].select.name.toLowerCase();
-
-      if (card.properties.Nome.title[0].text.content == 'Fazer caminhada') {
-        console.log(repetitive);
-      }
-
-      const isChecked = card.properties[process.env.CHECKBOX_FIELD].checkbox;
-      const isToday = date.isYesterday(cardDate);
       const hasHours =
         card.properties[process.env.DATE_FIELD].date.start.length > 10;
 
-      if (isToday) {
+      const wasYesterday = date.isYesterday(cardDate);
+      const repetitive =
+        card.properties[process.env.REPETITIVE_FIELD].select.name.toLowerCase();
+      const isChecked = card.properties[process.env.CHECKBOX_FIELD].checkbox;
+
+      if (wasYesterday) {
         switch (repetitive) {
           case 'daily':
             if (isChecked) {
-              let updatedDate = dateService.addDay(cardDate, hasHours, 1);
-              await notionAPI.updateCard(card, updatedDate);
+              let updatedDate = DateService.addDay(cardDate, hasHours, 1);
+              await NotionAPI.updateCard(card, updatedDate);
               console.warn(
                 `Changed ${
                   card.properties[process.env.TITLE_FIELD].title[0].text.content
                 } (daily task) to next occurency`
               );
             } else {
-              await notionAPI.handleImcompleteTask(card, cardDate, hasHours, 1);
+              await NotionAPI.handleImcompleteTask(card, cardDate, hasHours, 1);
             }
             break;
           case 'weekly':
             if (isChecked) {
-              let updatedDate = dateService.addDay(cardDate, hasHours, 7);
-              await notionAPI.updateCard(card, updatedDate);
+              let updatedDate = DateService.addDay(cardDate, hasHours, 7);
+              await NotionAPI.updateCard(card, updatedDate);
               console.warn(
                 `Changed ${
                   card.properties[process.env.TITLE_FIELD].title[0].text.content
                 } (weekly task) to next occurency`
               );
             } else {
-              await notionAPI.handleImcompleteTask(card, cardDate, hasHours, 7);
+              await NotionAPI.handleImcompleteTask(card, cardDate, hasHours, 7);
             }
             break;
           case 'every other day':
             if (isChecked) {
-              let updatedDate = dateService.addDay(cardDate, hasHours, 2);
-              await notionAPI.updateCard(card, updatedDate);
+              let updatedDate = DateService.addDay(cardDate, hasHours, 2);
+              await NotionAPI.updateCard(card, updatedDate);
               console.warn(
                 `Changed ${
                   card.properties[process.env.TITLE_FIELD].title[0].text.content
                 } (Every other day task) to next occurency`
               );
             } else {
-              await notionAPI.handleImcompleteTask(card, cardDate, hasHours, 2);
+              await NotionAPI.handleImcompleteTask(card, cardDate, hasHours, 2);
             }
             break;
           //? Not checked
           case 'monthly':
             (async () => {
-              let updatedDate = dateService.addMonth(cardDate, hasHours);
+              let updatedDate = DateService.addMonth(cardDate, hasHours);
               if (isChecked) {
-                await notionAPI.updateCard(card, updatedDate);
+                await NotionAPI.updateCard(card, updatedDate);
                 console.warn(
                   `Changed ${
                     card.properties[process.env.TITLE_FIELD].title[0].text
@@ -140,8 +135,8 @@ async function main() {
                   } (Monthly) task to next week`
                 );
               } else {
-                await notionAPI.updateCard(card, updatedDate);
-                await notionAPI.createAlert(card);
+                await NotionAPI.updateCard(card, updatedDate);
+                await NotionAPI.createAlert(card);
               }
             })();
             break;
@@ -149,12 +144,12 @@ async function main() {
             (async () => {
               let updatedDate;
               if (cardDate.getDay() < 5) {
-                updatedDate = dateService.addDay(cardDate, hasHours, 1);
+                updatedDate = DateService.addDay(cardDate, hasHours, 1);
               } else {
-                updatedDate = dateService.addDay(cardDate, hasHours, 3);
+                updatedDate = DateService.addDay(cardDate, hasHours, 3);
               }
               if (isChecked) {
-                await notionAPI.updateCard(card, updatedDate);
+                await NotionAPI.updateCard(card, updatedDate);
                 console.warn(
                   `Changed ${
                     card.properties[process.env.TITLE_FIELD].title[0].text
@@ -162,27 +157,54 @@ async function main() {
                   } (Weekday) task to next week`
                 );
               } else {
-                await notionAPI.updateCard(card, updatedDate);
-                await notionAPI.createAlert(card);
+                await NotionAPI.updateCard(card, updatedDate);
+                await NotionAPI.createAlert(card);
               }
             })();
             break;
           case 'every other week':
             if (isChecked) {
-              let updatedDate = dateService.addDay(cardDate, hasHours, 14);
-              await notionAPI.updateCard(card, updatedDate);
+              let updatedDate = DateService.addDay(cardDate, hasHours, 14);
+              await NotionAPI.updateCard(card, updatedDate);
               console.warn(
                 `Changed ${
                   card.properties[process.env.TITLE_FIELD].title[0].text.content
                 } (every other week task) to next occurency`
               );
             } else {
-              await notionAPI.handleImcompleteTask(card, cardDate, hasHours, 14);
+              await NotionAPI.handleImcompleteTask(
+                card,
+                cardDate,
+                hasHours,
+                14
+              );
+            }
+            break;
+          case 'every x days':
+            if (isChecked) {
+              let updatedDate = DateService.addDay(
+                cardDate,
+                hasHours,
+                card.properties[process.env.DAY_COUNT].number
+              );
+              await NotionAPI.updateCard(card, updatedDate);
+              console.warn(
+                `Changed ${
+                  card.properties[process.env.TITLE_FIELD].title[0].text.content
+                } (every x days task) to next occurency`
+              );
+            } else {
+              await NotionAPI.handleImcompleteTask(
+                card,
+                cardDate,
+                hasHours,
+                card.properties[process.env.DAY_COUNT].number
+              );
             }
             break;
         }
       }
-    }
+    };
   } catch (err) {
     console.warn(err);
   }
